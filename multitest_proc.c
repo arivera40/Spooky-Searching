@@ -40,7 +40,7 @@ int findTarget_proc(int target, int size, int *list){
 		
 		status = WEXITSTATUS(status); //returns the value of each child;
 		if(status != -1){
-			answer = procsNum*split +status; //holds index of where target was found
+			answer = status; //holds index of where target was found
 		}
 	}
 
