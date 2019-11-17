@@ -1,5 +1,3 @@
-#include<stdlib.h>
-#include<stddef.h>
 #include<stdio.h>
 #include<time.h>
 #include <pthread.h>
@@ -20,14 +18,25 @@ int main(int argc, char* argv){
 	}
 
 	int random;
-	//First 250 values randomized
-	for(i=0; i < 250; i++){
-		random = randomize(250);
-		int temp = list[random];
-		list[random] = list[i];
-		list[i] = temp;
-	}
+	int size = 0;
 	int target = randomize(250);	//Chooses random number to search for as target
+	int targetIndex = -1;		//Keeps track of target's index in order to swap for next test
+	while(size < 20000){	//20,000 / 250 = 80 iterations
+		size += 250;
+		if(targetIndex != -1){
+			random = randomize(size)-1;
+			int swap = list[random];
+			list[random] = list[targetIndex];
+			list[targetIndex] = swap;
+		}
+		for(i=0; i < size; i++){
+			random = randomize(size)-1;	//so includes index 0 to index 249
+			int temp = list[random];
+			list[random] = list[i];
+			list[i] = temp;
+		}
+		targetIndex = findTarget(target, 250, list);
+	}
 
 /*	int error;
 	if(pthread_mutex_init(&lock, NULL) != 0){
