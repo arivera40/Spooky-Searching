@@ -1,11 +1,11 @@
 all:
 	@echo "Error: must choose 'proc' or 'thread' only;"
 
-proc: multitest_proc.o searchtest.o
-	gcc -o searchtest multitest_proc.o searchtest.o
+proc: multitest_proc.o searchtest.c
+	gcc -D proc -o searchtest multitest_proc.o searchtest.c
 
-thread: multitest_thread.o searchtest.o
-	gcc -o searchtest multitest_thread.o searchtest.o
+thread: multitest_thread.o searchtest.o 
+	gcc -D thread -pthread -o searchtest multitest_thread.o searchtest.o
 
 searchtest.o: searchtest.c multitest.h
 	gcc -c searchtest.c multitest.h
