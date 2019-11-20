@@ -8,13 +8,13 @@
 
 
 #ifdef thread
-#define findTarget(target, size, childrenNum, split, list) findTarget_thread( target, size, threadNum, spilt, list)
-void* splitSearch(int, int, int, int*);
+#define findTarget(target, size, childrenNum, split, list) findTarget_thread( target, size, childrenNum, spilt, list)
+void* splitSearch(void *);
 int findTarget_thread(int, int, int, int, int*);
 #endif
 
 #ifdef proc
-#define findTarget(target, size, childrenNUm, split, list) findTarget_proc(target, size, childrenNUm, split, list)
+#define findTarget(target, size, childrenNum, split, list) findTarget_proc(target, size, childrenNum, split, list)
 int findTarget_proc(int, int, int, int, int*);
 #endif
 
