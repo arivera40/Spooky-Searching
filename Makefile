@@ -5,7 +5,7 @@ proc: multitest_proc.o searchtest.c
 	gcc -D proc -o searchtest multitest_proc.o searchtest.c
 
 thread: multitest_thread.o searchtest.o 
-	gcc -D thread -pthread -o searchtest multitest_thread.o searchtest.o
+	gcc -D thread -pthread -o searchtest multitest_thread.o searchtest.c
 
 searchtest.o: searchtest.c multitest.h
 	gcc -c searchtest.c multitest.h
