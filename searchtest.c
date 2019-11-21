@@ -5,6 +5,14 @@
 #include <pthread.h>
 #include"multitest.h"
 
+typedef struct Test{
+	int size;
+	int targetIndex;
+	int target;
+	int workers;
+	int time;
+}Test;
+
 int randomize(int size){
 	return 1 + (rand() % size);
 }
@@ -12,9 +20,8 @@ int randomize(int size){
 int main(int argc, char* argv){
 	int *list = (int*)malloc(sizeof(int) * 20000);	//declaration for list of values (size sucesptible to change)
 	int i;
-	int j;
-	int sizes[80];
-	int workloadTimes[80];
+	int j = 0;
+	Test tests[80];
 	int totalTime;
 	struct timeval start;
 	struct timeval end;
@@ -23,14 +30,13 @@ int main(int argc, char* argv){
 	}
 
 	int random;
-	int size = 0;
-	int childrenNum = 0;
 	int split = 0;
+	int size = 0;
 	int target = randomize(250);	//Chooses random number to search for as target
 	int targetIndex = -1;		//Keeps track of target's index in order to swap for next test
 	while(size < 20000){	//20,000 / 250 = 80 iterations
 		size += 250;
-		sizes[j] = size;
+		tests[j].size = size;
 		if(targetIndex != -1){
 			random = randomize(size)-1;
 			int swap = list[random];
@@ -43,18 +49,21 @@ int main(int argc, char* argv){
 			list[random] = list[i];
 			list[i] = temp;
 		}
-		childrenNum = size / 25;
-		split = size/childrenNum;
+		tests[j].workers = size / 25;
+		split = size/tests[j].workers;
 
 		gettimeofday(&start, 0);
-		targetIndex = findTarget(target, size, childrenNum, split, list);
+		targetIndex = findTarget(target, size, tests[j].workers, split, list);
+		tests[j].targetIndex = targetIndex;
 		gettimeofday(&end, 0);
-		workloadTimes[j] = ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec-start.tv_usec));
-		totalTime += workloadTimes[j];
+		tests[j].time = ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec-start.tv_usec));
+		totalTime += tests[j].time;
+		tests[j].target = target;
 		j++;
 	}
 	for(i=0; i < 80; i++){
-		printf("Array of size %d takes %d milliseconds to locate target\n", sizes[i], workloadTimes[i]);
+		printf("Array of size %d takes %d milliseconds to locate target\n", tests[i].size, tests[i].time);
+		printf("Number of workers: %d\nIndex of target (%d) is found in: %d\n\n", tests[i].workers, tests[i].target, tests[i].targetIndex);
 	}
 	printf("Average time to locate target: %d milliseconds\n", totalTime/80);
 	return 0;
