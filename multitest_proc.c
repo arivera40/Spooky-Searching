@@ -6,41 +6,49 @@
 #include<unistd.h>
 #include <ulimit.h>
 
+int initialize = 0;
+int findTarget_proc(int target, int size, int procsNum, int split, int *list){
 
-int findTarget_proc(int target, int size, int *list){
-	
-	int procsNum = size/10;
-	int split = size/procsNum;
+	if(initialize == 0){
+		printf("Using proccesses!\n");
+		initialize = 1;
+	}
+
 	pid_t child[procsNum];
 	int i;
 	int count = 0; //where each child[k] will start looping
 	int k = 0;
 	for(i = 0; i < procsNum; i++){
-		
-		if((child[i] = fork()) ==  < 0){
+		child[i] = fork();
+		if(child[i] < 0){
 
-			printf("Child %d, fork failed", i);
+			//printf("Child %d, fork failed", i);
 
-		}else if((child[i] = fork()) == 0){
+		}else if(child[i] == 0){
 			for(k = count; k<split+count; k++){
 				if(list[k] == target){
+					
 					exit(k);
 				}
 			}
-			exit(-1);
+			exit(255);
 		}
 		count+=split;
 	}
 	
-	int status = 0;
+	//int status_ptr;
 	int answer;
+	int exit_status;
 	for(i = 0; i<procsNum; i++){
 
-		waitpid((child[procsNum], &status,0); //waits for all children
-		
-		status = WEXITSTATUS(status); //returns the value of each child;
-		if(status != -1){
-			answer = status; //holds index of where target was found
+		wait(&child[i]);	//waits for all children	
+		exit_status = WEXITSTATUS(child[i]); //returns the value of each child;
+		//printf("AFTER RETURNING: Iteration = %d, exit_stats = %d\n", i, exit_status);
+		if(exit_status != 255){
+			answer = exit_status; //holds index of where target was found
+	//		printf("found target child[%d] = %d\n", i, answer);
+			
+			
 		}
 	}
 
