@@ -1,71 +1,83 @@
-#include<stdio.h>
-#include<stddef.h>
 #include<stdlib.h>
+#include<stddef.h>
+#include<stdio.h>
+#include<time.h>
+#include <pthread.h>
 #include"multitest.h"
-#include<pthread.h>
-#include<unistd.h>	
+#include<math.h>
 
-typedef struct Arguments{
-	int start;
-	int end;
-	int target;
+typedef struct Test{
+	int size;
 	int targetIndex;
-}Arguments;
+	int target;
+	int workers;
+	int time;
+}Test;
 
-int *list;	//made this global so my splitSearch function has access to it
-int initialize = 0;
-
-void * splitSearch(void *args){
-	Arguments *arguments = (Arguments*)args;
-	int result = -1;
-	int i;
-	for(i=arguments->start; i < arguments->end; i++){
-		if(list[i] == arguments->target){
-			arguments->targetIndex = i;
-			break;
-		}
+int first = 0;
+int randomize(int size){
+	if(first == 0){
+		first = 1;
+		srand(time(NULL));
 	}
-	pthread_exit((void*)arguments);
+	return 1 + (rand() % size);
 }
-//This function will act as main function
-int findTarget_thread(int target, int size, int threadNum, int split,int *array){
-	int totalSize = size;	
-	if(initialize == 0){
-		printf("Using threads!\n");
-		initialize = 1;
-	}
-	pthread_t threads[threadNum];
-	list = array;
-	void *status;
-	int *exitStatus = (int*)malloc(sizeof(int) * threadNum);
 
+int main(int argc, char* argv){
+	int *list = (int*)malloc(sizeof(int) * 20000);	//declaration for list of values (size sucesptible to change)
 	int i;
-	int start;
-	int end = 0;
-	for(i=0; i < threadNum; i++){
-		if(size - split >= 0){
-			size = size - split;
-			start = end;
-			end = start + split;
-		}else{
-			start = end;
-			end = start + size;
-		}
-		Arguments *args = (Arguments*)malloc(sizeof(Arguments));
-		args->start = start;
-		args->end = end;
-		args->target = target;
-		args->targetIndex = -1;
-		pthread_create(&threads[i], NULL, splitSearch, (void*)args);
+	int j = 0;
+	Test tests[80];
+	int totalTime;
+	struct timeval start;
+	struct timeval end;
+	for(i=0; i < 20000; i++){
+		list[i] = i+1;
 	}
-	int result = -1;
-	for(i=0; i < threadNum; i++){
-		pthread_join(threads[i], (void**)&status);
-		Arguments *arguments = (Arguments*)status;
-		if(arguments->targetIndex != -1){
-			result = arguments->targetIndex;
+
+	int random;
+	int split = 0;
+	int size = 0;
+	int target = randomize(250);	//Chooses random number to search for as target
+	int targetIndex = -1;		//Keeps track of target's index in order to swap for next test
+	while(size < 20000){	//20,000 / 250 = 80 iterations
+		size += 250;
+		tests[j].size = size;
+		if(targetIndex != -1){
+			random = randomize(size)-1;
+			int swap = list[random];
+			list[random] = list[targetIndex];
+			list[targetIndex] = swap;
 		}
-		free(arguments);
+		for(i=0; i < size; i++){
+			random = randomize(size)-1;	//so includes index 0 to index 249
+			int temp = list[random];
+			list[random] = list[i];
+			list[i] = temp;
+		}
+		tests[j].workers = size / 25;
+		split = size/tests[j].workers;
+
+		gettimeofday(&start, 0);
+		targetIndex = findTarget(target, size, tests[j].workers, split, list);
+		tests[j].targetIndex = targetIndex;
+		gettimeofday(&end, 0);
+		tests[j].time = ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec-start.tv_usec));
+		totalTime += tests[j].time;
+		tests[j].target = target;
+		j++;
 	}
-	return result;
+	float standardDeviation = 0;
+	int max = 0;
+	int min = 100000;
+	for(i=0; i < 80; i++){
+		printf("Array of size %d takes %d milliseconds to locate target\n", tests[i].size, tests[i].time);
+		printf("Number of workers: %d\nIndex of target (%d) is found in: %d\n\n", tests[i].workers, tests[i].target, tests[i].targetIndex);
+		standardDeviation += pow((tests[i].time - (totalTime/80)), 2);
+		if(tests[i].time > max) max = tests[i].time;
+		if(tests[i].time < min) min = tests[i].time;
+	}
+	printf("Average time to locate target: %d milliseconds\nStandard deviation: %.6f milliseconds\n", totalTime/80, sqrt(standardDeviation/80));
+	printf("Min: %d milliseconds, Max: %d milliseconds\n", min, max);
+	return 0;
 }
