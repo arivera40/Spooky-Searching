@@ -4,6 +4,7 @@
 #include<time.h>
 #include <pthread.h>
 #include"multitest.h"
+#include<math.h>
 
 typedef struct Test{
 	int size;
@@ -13,7 +14,12 @@ typedef struct Test{
 	int time;
 }Test;
 
+int first = 0;
 int randomize(int size){
+	if(first == 0){
+		first = 1;
+		srand(time(NULL));
+	}
 	return 1 + (rand() % size);
 }
 
@@ -61,10 +67,17 @@ int main(int argc, char* argv){
 		tests[j].target = target;
 		j++;
 	}
+	float standardDeviation = 0;
+	int max = 0;
+	int min = 100000;
 	for(i=0; i < 80; i++){
 		printf("Array of size %d takes %d milliseconds to locate target\n", tests[i].size, tests[i].time);
 		printf("Number of workers: %d\nIndex of target (%d) is found in: %d\n\n", tests[i].workers, tests[i].target, tests[i].targetIndex);
+		standardDeviation += pow((tests[i].time - (totalTime/80)), 2);
+		if(tests[i].time > max) max = tests[i].time;
+		if(tests[i].time < min) min = tests[i].time;
 	}
-	printf("Average time to locate target: %d milliseconds\n", totalTime/80);
+	printf("Average time to locate target: %d milliseconds\nStandard deviation: %.6f milliseconds\n", totalTime/80, sqrt(standardDeviation/80));
+	printf("Min: %d milliseconds, Max: %d milliseconds\n", min, max);
 	return 0;
 }
